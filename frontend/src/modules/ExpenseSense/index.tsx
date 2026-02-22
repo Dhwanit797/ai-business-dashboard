@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
-import { Receipt } from 'lucide-react'
+import { Receipt, CheckCircle2 } from 'lucide-react'
 import { expenseApi } from './services/api'
+import useModuleStatus from '../../hooks/useModuleStatus'
 import Card from '../../components/Card'
 import PageHeader from '../../components/PageHeader'
 import ModuleLayout from '../../components/module/ModuleLayout'
@@ -16,12 +17,29 @@ type ChartItem = { name: string; value: number }
 type TrendItem = { month: string; amount: number }
 type Stats = { total: number; trend?: string; trend_percent?: number }
 
+const unlockVariants = {
+  hidden: { opacity: 0, y: 24, filter: 'blur(8px)' },
+  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+}
+
 export default function ExpenseSense() {
   const [chartData, setChartData] = useState<ChartItem[] | null>(null)
   const [trends, setTrends] = useState<TrendItem[] | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
-  const [hasData, setHasData] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { hasData, loading, refreshStatus } = useModuleStatus('expense')
+
+  const loadData = () => {
+    expenseApi.summary().then((data) => {
+      setChartData(data.by_category)
+      setStats({ total: data.total, trend: data.trend, trend_percent: data.trend_percent })
+    }).catch(() => { })
+    expenseApi.trends().then(setTrends).catch(() => { })
+  }
+
+  useEffect(() => {
+    if (hasData) loadData()
+  }, [hasData])
 
   const handleFileUpload = async (file: File) => {
     setError(null)
@@ -44,7 +62,7 @@ export default function ExpenseSense() {
       } else {
         setTrends(null)
       }
-      setHasData(true)
+      await refreshStatus()
       return data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
@@ -52,6 +70,17 @@ export default function ExpenseSense() {
       setTrends(null)
       setStats(null)
     }
+  }
+
+  // ─── Loading State ──────────────────────────────────────────────
+  if (loading) {
+    return (
+      <ModuleLayout>
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-ds-text-muted border-t-blue-400" />
+        </div>
+      </ModuleLayout>
+    )
   }
 
   // ─── Pre-Insight State ────────────────────────────────────────────
@@ -76,19 +105,26 @@ export default function ExpenseSense() {
     )
   }
 
-  // ─── Data View ────────────────────────────────────────────────────
+  // ─── Data View (Unlocked) ─────────────────────────────────────────
   return (
     <ModuleLayout>
-      <PageHeader
-        title="Expense Sense"
-        action={
-          <CsvUpload
-            onUpload={handleFileUpload}
-            title="Upload Expenses"
-            description="Process CSV records"
-          />
-        }
-      />
+      <motion.div initial="hidden" animate="visible" variants={unlockVariants}>
+        <PageHeader
+          title="Expense Sense"
+          action={
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-semibold text-blue-400 ring-1 ring-blue-500/30">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Insights Active
+              </span>
+              <CsvUpload
+                onUpload={handleFileUpload}
+                title="Upload Expenses"
+                description="Process CSV records"
+              />
+            </div>
+          }
+        />
+      </motion.div>
 
       {error && (
         <div className="rounded-lg bg-ds-accent-danger/10 border border-ds-accent-danger/30 px-4 py-3 text-sm text-ds-accent-danger">
@@ -96,33 +132,41 @@ export default function ExpenseSense() {
         </div>
       )}
 
-      {/* Stats row */}
-      <StatsGrid columns={3}>
-        <Card>
-          <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Total expense</h3>
-          <p className="text-3xl font-bold text-ds-text-primary">{stats?.total ?? 0}</p>
-        </Card>
-        <Card>
-          <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Trend</h3>
-          {stats?.trend != null && stats.trend_percent != null ? (
-            <div className="flex items-center gap-2">
-              <span className={stats.trend === 'up' ? 'text-amber-400' : 'text-emerald-400'}>
-                {stats.trend === 'up' ? '↑' : '↓'} {Math.abs(stats.trend_percent)}%
-              </span>
-              <span className="text-sm text-ds-text-muted">vs previous</span>
-            </div>
-          ) : (
-            <p className="text-lg text-ds-text-muted">—</p>
-          )}
-        </Card>
-        <Card>
-          <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Categories</h3>
-          <p className="text-3xl font-bold text-ds-text-primary">{chartData?.length ?? 0}</p>
-        </Card>
-      </StatsGrid>
+      <motion.div initial="hidden" animate="visible" variants={unlockVariants} transition={{ delay: 0.1 }}>
+        {/* Stats row */}
+        <StatsGrid columns={3}>
+          <Card className="unlock-glow">
+            <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Total expense</h3>
+            <p className="text-3xl font-bold text-ds-text-primary">{stats?.total ?? 0}</p>
+          </Card>
+          <Card className="unlock-glow">
+            <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Trend</h3>
+            {stats?.trend != null && stats.trend_percent != null ? (
+              <div className="flex items-center gap-2">
+                <span className={stats.trend === 'up' ? 'text-amber-400' : 'text-emerald-400'}>
+                  {stats.trend === 'up' ? '↑' : '↓'} {Math.abs(stats.trend_percent)}%
+                </span>
+                <span className="text-sm text-ds-text-muted">vs previous</span>
+              </div>
+            ) : (
+              <p className="text-lg text-ds-text-muted">—</p>
+            )}
+          </Card>
+          <Card className="unlock-glow">
+            <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Categories</h3>
+            <p className="text-3xl font-bold text-ds-text-primary">{chartData?.length ?? 0}</p>
+          </Card>
+        </StatsGrid>
+      </motion.div>
 
       {/* Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <motion.div
+        className="grid gap-6 lg:grid-cols-2"
+        initial="hidden"
+        animate="visible"
+        variants={unlockVariants}
+        transition={{ delay: 0.2 }}
+      >
         <Card>
           <h3 className="mb-4 text-sm font-medium text-ds-text-muted">By category</h3>
           {chartData?.length ? (
@@ -164,7 +208,7 @@ export default function ExpenseSense() {
             </div>
           )}
         </Card>
-      </div>
+      </motion.div>
     </ModuleLayout>
   )
 }

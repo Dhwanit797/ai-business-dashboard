@@ -2,9 +2,13 @@ from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
 from core.security import get_current_user
 from database import get_db
-from services.green_grid_service import get_green_grid_data, get_energy_chart_data, upload_green_csv
+from services.green_grid_service import get_green_grid_data, get_energy_chart_data, upload_green_csv, get_green_grid_status
 
 router = APIRouter(prefix="/green-grid", tags=["green-grid"])
+
+@router.get("/status")
+def green_grid_status(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return get_green_grid_status(db)
 
 
 @router.get("/data")

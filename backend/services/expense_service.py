@@ -6,6 +6,11 @@ from fastapi import UploadFile, HTTPException
 from sqlalchemy.orm import Session
 from models.expense import ExpenseItem
 
+def get_expense_status(db: Session) -> Dict[str, Any]:
+    count = db.query(ExpenseItem).count()
+    return {"has_data": count > 0, "row_count": count}
+
+
 # Mock expense data for demo
 def get_expense_summary(db: Session = None) -> Dict[str, Any]:
     categories = ["Operations", "Marketing", "R&D", "Salaries", "Utilities", "Travel"]
@@ -66,6 +71,9 @@ def upload_expense_csv(file: UploadFile, db: Session) -> Dict[str, Any]:
             "trend": "up",
             "trend_percent": 5.0
         }
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to process CSV: {str(e)}")

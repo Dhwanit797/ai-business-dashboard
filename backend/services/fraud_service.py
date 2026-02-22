@@ -14,6 +14,11 @@ except ImportError:
     HAS_SKLEARN = False
 
 
+def get_fraud_status(db: Session) -> Dict[str, Any]:
+    count = db.query(FraudRecord).count()
+    return {"has_data": count > 0, "row_count": count}
+
+
 def get_fraud_insights(db: Session = None) -> Dict[str, Any]:
     if HAS_SKLEARN:
         np.random.seed(42)
@@ -59,17 +64,26 @@ def upload_fraud_csv(file: UploadFile, db: Session) -> Dict[str, Any]:
                 detail=f"CSV must contain columns: {', '.join(required_cols)}"
             )
             
+        db.query(FraudRecord).delete()
+        db.commit()
+            
         fraud_count = 0
         normal_count = 0
         
+        seen_tx = set()
         for _, row in df.iterrows():
+            tx_id = str(row["transaction_id"])
+            if tx_id in seen_tx:
+                continue
+            seen_tx.add(tx_id)
+            
             is_f = bool(row["is_fraud"])
             item = FraudRecord(
-                transaction_id=str(row["transaction_id"]),
+                transaction_id=tx_id,
                 amount=int(row["amount"]),
                 is_fraud=is_f
             )
-            db.merge(item) # Merge to handle duplicate transaction IDs gracefully
+            db.add(item)
             
             if is_f:
                 fraud_count += 1
@@ -86,6 +100,9 @@ def upload_fraud_csv(file: UploadFile, db: Session) -> Dict[str, Any]:
             "normal_count": normal_count,
             "fraud_percentage": fraud_percentage
         }
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to process CSV: {str(e)}")

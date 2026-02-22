@@ -56,3 +56,15 @@ body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Unlock glow animation for insight cards */
+@keyframes unlock-glow-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+  50% { box-shadow: 0 0 16px 4px rgba(52, 211, 153, 0.15); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+.unlock-glow {
+  animation: unlock-glow-pulse 1.5s ease-out 0.3s 1;
+}
+

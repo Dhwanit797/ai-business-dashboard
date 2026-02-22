@@ -20,6 +20,11 @@ except ImportError:
 from sqlalchemy.orm import Session
 from models.inventory import InventoryItem
 
+def get_inventory_status(db: Session) -> Dict[str, Any]:
+    count = db.query(InventoryItem).count()
+    return {"has_data": count > 0, "row_count": count}
+
+
 def get_inventory_summary(db: Session = None) -> Dict[str, Any]:
     items = []
     if db is not None:

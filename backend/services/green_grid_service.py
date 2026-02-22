@@ -7,6 +7,11 @@ from sqlalchemy.orm import Session
 from models.green_grid import GreenGridRecord
 
 
+def get_green_grid_status(db: Session) -> Dict[str, Any]:
+    count = db.query(GreenGridRecord).count()
+    return {"has_data": count > 0, "row_count": count}
+
+
 def get_green_grid_data(db: Session = None) -> Dict[str, Any]:
     return {
         "current_usage_kwh": round(random.uniform(1200, 1800), 1),
@@ -64,6 +69,9 @@ def upload_green_csv(file: UploadFile, db: Session) -> Dict[str, Any]:
             "values": values,
             "average": average
         }
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to process CSV: {str(e)}")

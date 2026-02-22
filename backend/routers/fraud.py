@@ -2,9 +2,13 @@ from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
 from core.security import get_current_user
 from database import get_db
-from services.fraud_service import get_fraud_insights, get_fraud_chart_data, upload_fraud_csv
+from services.fraud_service import get_fraud_insights, get_fraud_chart_data, upload_fraud_csv, get_fraud_status
 
 router = APIRouter(prefix="/fraud", tags=["fraud"])
+
+@router.get("/status")
+def fraud_status(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return get_fraud_status(db)
 
 
 @router.get("/insights")
