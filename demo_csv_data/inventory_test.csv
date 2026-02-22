@@ -1,0 +1,11 @@
+product_id,product_name,category,stock_quantity,reorder_level,unit_price,monthly_sales,supplier,last_restock_date
+101,Laptop Pro 15,Electronics,25,10,85000,18,TechSupply Pvt Ltd,2026-01-10
+102,Wireless Mouse,Electronics,150,50,1200,90,TechSupply Pvt Ltd,2026-01-05
+103,Office Chair,Furniture,12,15,7500,8,FurniWorld,2026-01-15
+104,Notebook Pack,Stationery,300,100,250,140,PaperMart,2026-01-08
+105,LED Monitor 24,Electronics,18,10,15000,12,ScreenTech,2026-01-12
+106,Water Bottle,Accessories,80,40,500,55,HydroGoods,2026-01-18
+107,Desk Lamp,Furniture,20,15,1800,10,LightHouse,2026-01-20
+108,Keyboard Mechanical,Electronics,40,20,3500,25,TechSupply Pvt Ltd,2026-01-14
+109,Printer Ink Cartridge,Electronics,10,25,2200,35,PrintCare,2026-01-09
+110,Whiteboard Marker Set,Stationery,60,30,450,20,PaperMart,2026-01-11
