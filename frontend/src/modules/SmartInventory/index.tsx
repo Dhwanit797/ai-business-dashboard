@@ -1,44 +1,63 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
+import { Package } from 'lucide-react'
 import { inventoryApi } from './services/api'
 import Card from '../../components/Card'
-import CsvUpload from '../../components/CsvUpload'
 import PageHeader from '../../components/PageHeader'
-import LoadingSkeleton from '../../components/LoadingSkeleton'
-import { pageVariants, pageTransition } from '../../animations/pageVariants'
+import ModuleLayout from '../../components/module/ModuleLayout'
+import PreInsightLayout from '../../components/module/PreInsightLayout'
+import StatsGrid from '../../components/module/StatsGrid'
+import CsvUpload from '../../components/CsvUpload'
 
 export default function SmartInventory() {
   const [summary, setSummary] = useState<Awaited<ReturnType<typeof inventoryApi.summary>> | null>(null)
   const [forecast, setForecast] = useState<Awaited<ReturnType<typeof inventoryApi.forecast>> | null>(null)
+  const [hasData, setHasData] = useState(false)
 
   const loadData = () => {
     inventoryApi.summary().then(setSummary).catch(() => setSummary(null))
     inventoryApi.forecast().then(setForecast).catch(() => setForecast(null))
   }
 
-  useEffect(() => {
-    loadData()
-  }, [])
+  // NO useEffect — demo data is NOT loaded on mount
 
   const handleFileUpload = async (file: File) => {
     const res = await inventoryApi.upload(file)
     if (res.success) {
       loadData()
+      setHasData(true)
       return res
     }
     throw new Error('Upload failed')
   }
 
+  // ─── Pre-Insight State ────────────────────────────────────────────
+  if (!hasData) {
+    return (
+      <ModuleLayout>
+        <PreInsightLayout
+          moduleTitle="Smart Inventory"
+          tagline="Predict demand and optimize stock levels with intelligence."
+          bullets={[
+            'Real-time stock level monitoring across items',
+            'AI-driven reorder suggestion engine',
+            'Weekly demand forecasting and predictions',
+          ]}
+          icon={Package}
+          accentColor="#34D399"
+          lockedMetrics={['Stock Items', 'Low Stock Count', 'Forecast Weeks']}
+          csvColumns={['name', 'stock', 'reorder_at']}
+          onUpload={handleFileUpload}
+          successMessage={(res) => `Successfully added ${res.records_added} records`}
+        />
+      </ModuleLayout>
+    )
+  }
+
+  // ─── Data View ────────────────────────────────────────────────────
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={pageTransition}
-      className="space-y-8"
-    >
+    <ModuleLayout>
       <PageHeader
         title="Smart Inventory AI"
         action={
@@ -50,6 +69,21 @@ export default function SmartInventory() {
           />
         }
       />
+
+      <StatsGrid columns={3}>
+        <Card>
+          <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Total items</h3>
+          <p className="text-3xl font-bold text-ds-text-primary">{summary?.items?.length ?? 0}</p>
+        </Card>
+        <Card>
+          <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Low stock items</h3>
+          <p className="text-3xl font-bold text-amber-400">{summary?.low_stock_count ?? 0}</p>
+        </Card>
+        <Card>
+          <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Forecast weeks</h3>
+          <p className="text-3xl font-bold text-ds-text-primary">{forecast?.length ?? 0}</p>
+        </Card>
+      </StatsGrid>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -75,7 +109,7 @@ export default function SmartInventory() {
               ))}
             </motion.ul>
           ) : (
-            <LoadingSkeleton />
+            <p className="text-sm text-ds-text-muted">Loading stock data…</p>
           )}
         </Card>
 
@@ -90,12 +124,7 @@ export default function SmartInventory() {
               ))}
             </ul>
           ) : (
-            <p className="text-slate-500">No reorder needed</p>
-          )}
-          {summary && (
-            <p className="mt-4 text-sm text-slate-500">
-              Low stock items: {summary.low_stock_count}
-            </p>
+            <p className="text-sm text-ds-text-muted">No reorder needed</p>
           )}
         </Card>
       </div>
@@ -103,7 +132,7 @@ export default function SmartInventory() {
       <Card>
         <h3 className="mb-4 text-sm font-medium text-ds-text-muted">Forecast (next weeks)</h3>
         {forecast?.length ? (
-          <div className="h-64">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={forecast}>
                 <XAxis dataKey="week" stroke="#94a3b8" />
@@ -112,11 +141,11 @@ export default function SmartInventory() {
                 <Bar dataKey="predicted_stock" name="Predicted stock" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </motion.div>
         ) : (
-          <LoadingSkeleton />
+          <p className="text-sm text-ds-text-muted">Loading forecast data…</p>
         )}
       </Card>
-    </motion.div>
+    </ModuleLayout>
   )
 }

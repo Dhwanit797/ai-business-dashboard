@@ -1,23 +1,24 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
+import { Leaf } from 'lucide-react'
 import { greenApi } from './services/api'
 import Card from '../../components/Card'
-import CsvUpload from '../../components/CsvUpload'
 import PageHeader from '../../components/PageHeader'
-import LoadingSkeleton from '../../components/LoadingSkeleton'
-import { pageVariants, pageTransition } from '../../animations/pageVariants'
+import ModuleLayout from '../../components/module/ModuleLayout'
+import PreInsightLayout from '../../components/module/PreInsightLayout'
+import StatsGrid from '../../components/module/StatsGrid'
+import CsvUpload from '../../components/CsvUpload'
 
 type ChartPoint = { name: string; usage: number }
 
 export default function GreenGrid() {
   const [chartData, setChartData] = useState<ChartPoint[] | null>(null)
   const [average, setAverage] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [hasData, setHasData] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleFileUpload = async (file: File) => {
-    setLoading(true)
     setError(null)
     try {
       const data = await greenApi.upload(file)
@@ -27,33 +28,47 @@ export default function GreenGrid() {
       }))
       setChartData(points.length ? points : null)
       setAverage(data.average ?? null)
+      setHasData(true)
       return data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
       setChartData(null)
       setAverage(null)
-      throw err
-    } finally {
-      setLoading(false)
     }
   }
 
+  // ─── Pre-Insight State ────────────────────────────────────────────
+  if (!hasData) {
+    return (
+      <ModuleLayout>
+        <PreInsightLayout
+          moduleTitle="Green Grid Optimizer"
+          tagline="Optimize energy consumption with data-driven efficiency."
+          bullets={[
+            'Hourly and daily usage trend analysis',
+            'Peak consumption detection and shift recommendations',
+            'Environmental impact scoring and benchmarking',
+          ]}
+          icon={Leaf}
+          accentColor="#4ADE80"
+          lockedMetrics={['Average Usage (kWh)', 'Data Points', 'Grid Status']}
+          csvColumns={['hour', 'usage_kwh']}
+          onUpload={handleFileUpload}
+        />
+      </ModuleLayout>
+    )
+  }
+
+  // ─── Data View ────────────────────────────────────────────────────
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={pageTransition}
-      className="space-y-8"
-    >
+    <ModuleLayout>
       <PageHeader
-        title="Smart Green Grid Optimizer"
+        title="Green Grid Optimizer"
         action={
           <CsvUpload
             onUpload={handleFileUpload}
             title="Upload Grid Data"
-            description="Process CSV records"
+            description="Process energy CSV records"
           />
         }
       />
@@ -64,28 +79,21 @@ export default function GreenGrid() {
         </div>
       )}
 
-      <div className="grid gap-6 sm:grid-cols-3">
+      <StatsGrid columns={3}>
         <Card>
           <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Average usage</h3>
-          {average != null ? (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="text-3xl font-bold text-ds-text-primary">
-              {average} kWh
-            </motion.p>
-          ) : (
-            <div className="flex h-14 items-center text-ds-text-muted">
-              {loading ? <LoadingSkeleton /> : <p className="text-sm">Upload CSV</p>}
-            </div>
-          )}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="text-3xl font-bold text-ds-text-primary"
+          >
+            {average != null ? `${average} kWh` : '—'}
+          </motion.p>
         </Card>
         <Card>
           <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Data points</h3>
-          {chartData?.length != null ? (
-            <p className="text-3xl font-bold text-ds-text-primary">{chartData.length}</p>
-          ) : (
-            <div className="flex h-14 items-center text-ds-text-muted">
-              <p className="text-sm">—</p>
-            </div>
-          )}
+          <p className="text-3xl font-bold text-ds-text-primary">{chartData?.length ?? 0}</p>
         </Card>
         <Card>
           <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Status</h3>
@@ -93,12 +101,17 @@ export default function GreenGrid() {
             {chartData?.length ? 'Data loaded' : 'Awaiting upload'}
           </p>
         </Card>
-      </div>
+      </StatsGrid>
 
       <Card>
         <h3 className="mb-4 text-sm font-medium text-ds-text-muted">Usage trend</h3>
         {chartData?.length ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="h-64">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="h-64"
+          >
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -115,11 +128,11 @@ export default function GreenGrid() {
             </ResponsiveContainer>
           </motion.div>
         ) : (
-          <div className="flex h-64 items-center justify-center rounded-lg bg-ds-bg-base/50 text-ds-text-muted">
-            {loading ? <LoadingSkeleton /> : <p className="text-sm">Upload a CSV to see usage trend</p>}
+          <div className="flex h-64 items-center justify-center rounded-lg bg-ds-bg-base/50 text-sm text-ds-text-muted">
+            No usage data
           </div>
         )}
       </Card>
-    </motion.div>
+    </ModuleLayout>
   )
 }

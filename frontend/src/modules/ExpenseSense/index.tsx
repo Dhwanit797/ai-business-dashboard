@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
+import { Receipt } from 'lucide-react'
 import { expenseApi } from './services/api'
 import Card from '../../components/Card'
-import CsvUpload from '../../components/CsvUpload'
 import PageHeader from '../../components/PageHeader'
-import LoadingSkeleton from '../../components/LoadingSkeleton'
-import { pageVariants, pageTransition } from '../../animations/pageVariants'
+import ModuleLayout from '../../components/module/ModuleLayout'
+import PreInsightLayout from '../../components/module/PreInsightLayout'
+import StatsGrid from '../../components/module/StatsGrid'
+import CsvUpload from '../../components/CsvUpload'
 
 const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4']
 
@@ -18,11 +20,10 @@ export default function ExpenseSense() {
   const [chartData, setChartData] = useState<ChartItem[] | null>(null)
   const [trends, setTrends] = useState<TrendItem[] | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [hasData, setHasData] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleFileUpload = async (file: File) => {
-    setLoading(true)
     setError(null)
     try {
       const data = await expenseApi.upload(file)
@@ -43,27 +44,41 @@ export default function ExpenseSense() {
       } else {
         setTrends(null)
       }
+      setHasData(true)
       return data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
       setChartData(null)
       setTrends(null)
       setStats(null)
-      throw err
-    } finally {
-      setLoading(false)
     }
   }
 
+  // ─── Pre-Insight State ────────────────────────────────────────────
+  if (!hasData) {
+    return (
+      <ModuleLayout>
+        <PreInsightLayout
+          moduleTitle="Expense Sense"
+          tagline="Transform raw spending data into strategic intelligence."
+          bullets={[
+            'Category-wise breakdown of all expenses',
+            'Monthly spending trend analysis',
+            'Spending direction and anomaly detection',
+          ]}
+          icon={Receipt}
+          accentColor="#3b82f6"
+          lockedMetrics={['Total Expense', 'Trend Direction', 'Category Count']}
+          csvColumns={['category', 'amount', 'month']}
+          onUpload={handleFileUpload}
+        />
+      </ModuleLayout>
+    )
+  }
+
+  // ─── Data View ────────────────────────────────────────────────────
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={pageTransition}
-      className="space-y-8"
-    >
+    <ModuleLayout>
       <PageHeader
         title="Expense Sense"
         action={
@@ -81,28 +96,41 @@ export default function ExpenseSense() {
         </div>
       )}
 
+      {/* Stats row */}
+      <StatsGrid columns={3}>
+        <Card>
+          <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Total expense</h3>
+          <p className="text-3xl font-bold text-ds-text-primary">{stats?.total ?? 0}</p>
+        </Card>
+        <Card>
+          <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Trend</h3>
+          {stats?.trend != null && stats.trend_percent != null ? (
+            <div className="flex items-center gap-2">
+              <span className={stats.trend === 'up' ? 'text-amber-400' : 'text-emerald-400'}>
+                {stats.trend === 'up' ? '↑' : '↓'} {Math.abs(stats.trend_percent)}%
+              </span>
+              <span className="text-sm text-ds-text-muted">vs previous</span>
+            </div>
+          ) : (
+            <p className="text-lg text-ds-text-muted">—</p>
+          )}
+        </Card>
+        <Card>
+          <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Categories</h3>
+          <p className="text-3xl font-bold text-ds-text-primary">{chartData?.length ?? 0}</p>
+        </Card>
+      </StatsGrid>
+
+      {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <h3 className="mb-4 text-sm font-medium text-ds-text-muted">By category</h3>
           {chartData?.length ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="h-64"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={chartData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label
-                  >
-                    {chartData.map((_, i) => (
+                  <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                    {chartData.map((_entry, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
@@ -111,64 +139,32 @@ export default function ExpenseSense() {
               </ResponsiveContainer>
             </motion.div>
           ) : (
-            <div className="flex h-64 items-center justify-center rounded-lg bg-ds-bg-base/50 text-ds-text-muted">
-              {loading ? <LoadingSkeleton /> : <p className="text-sm">Upload a CSV to see breakdown</p>}
+            <div className="flex h-64 items-center justify-center rounded-lg bg-ds-bg-base/50 text-sm text-ds-text-muted">
+              No category data
             </div>
           )}
         </Card>
 
         <Card>
-          <h3 className="mb-4 text-sm font-medium text-ds-text-muted">Summary & trend</h3>
-          {stats ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-4"
-            >
-              <p className="text-3xl font-bold text-ds-text-primary">{stats.total}</p>
-              <p className="text-ds-text-muted">Total expense</p>
-              {stats.trend != null && stats.trend_percent != null && (
-                <div className="flex items-center gap-2">
-                  <span className={stats.trend === 'up' ? 'text-amber-400' : 'text-emerald-400'}>
-                    {stats.trend === 'up' ? '↑' : '↓'} {Math.abs(stats.trend_percent)}%
-                  </span>
-                  <span className="text-ds-text-muted">vs previous period</span>
-                </div>
-              )}
+          <h3 className="mb-4 text-sm font-medium text-ds-text-muted">Monthly trend</h3>
+          {trends?.length ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={trends}>
+                  <XAxis dataKey="month" stroke="#94a3b8" />
+                  <YAxis stroke="#94a3b8" />
+                  <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)' }} />
+                  <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </motion.div>
           ) : (
-            <div className="flex h-40 items-center justify-center text-ds-text-muted">
-              {loading ? <LoadingSkeleton /> : <p className="text-sm">Upload a CSV to see summary</p>}
+            <div className="flex h-64 items-center justify-center rounded-lg bg-ds-bg-base/50 text-sm text-ds-text-muted">
+              No trend data
             </div>
           )}
         </Card>
       </div>
-
-      <Card>
-        <h3 className="mb-4 text-sm font-medium text-ds-text-muted">Monthly trend</h3>
-        {trends?.length ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="h-64"
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={trends}>
-                <XAxis dataKey="month" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)' }} />
-                <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-        ) : (
-          <div className="flex h-64 items-center justify-center rounded-lg bg-ds-bg-base/50 text-ds-text-muted">
-            {loading ? <LoadingSkeleton /> : <p className="text-sm">Upload a CSV to see trend</p>}
-          </div>
-        )}
-      </Card>
-    </motion.div>
+    </ModuleLayout>
   )
 }

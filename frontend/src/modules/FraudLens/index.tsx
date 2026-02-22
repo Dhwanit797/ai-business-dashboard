@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { Shield } from 'lucide-react'
 import { fraudApi } from './services/api'
 import Card from '../../components/Card'
-import CsvUpload from '../../components/CsvUpload'
 import PageHeader from '../../components/PageHeader'
-import LoadingSkeleton from '../../components/LoadingSkeleton'
-import { pageVariants, pageTransition } from '../../animations/pageVariants'
+import ModuleLayout from '../../components/module/ModuleLayout'
+import PreInsightLayout from '../../components/module/PreInsightLayout'
+import StatsGrid from '../../components/module/StatsGrid'
+import CsvUpload from '../../components/CsvUpload'
 
 const COLORS = { normal: '#3b82f6', fraud: '#f59e0b' }
 
@@ -27,11 +29,10 @@ export default function FraudLens() {
   const [fraudCount, setFraudCount] = useState<number | null>(null)
   const [normalCount, setNormalCount] = useState<number | null>(null)
   const [fraudPercentage, setFraudPercentage] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [hasData, setHasData] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleFileUpload = async (file: File) => {
-    setLoading(true)
     setError(null)
     try {
       const data = await fraudApi.upload(file)
@@ -42,6 +43,7 @@ export default function FraudLens() {
         { name: 'Normal', value: data.normal_count },
         { name: 'Fraud', value: data.fraud_count },
       ])
+      setHasData(true)
       return data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
@@ -49,23 +51,36 @@ export default function FraudLens() {
       setFraudCount(null)
       setNormalCount(null)
       setFraudPercentage(null)
-      throw err
-    } finally {
-      setLoading(false)
     }
   }
 
+  // ─── Pre-Insight State ────────────────────────────────────────────
+  if (!hasData) {
+    return (
+      <ModuleLayout>
+        <PreInsightLayout
+          moduleTitle="Fraud Lens"
+          tagline="Unmask hidden threats in your transaction data."
+          bullets={[
+            'Anomaly detection across all transactions',
+            'Risk scoring and fraud distribution analysis',
+            'Normal vs fraudulent transaction breakdown',
+          ]}
+          icon={Shield}
+          accentColor="#2DD4BF"
+          lockedMetrics={['Fraud Count', 'Normal Count', 'Risk Level']}
+          csvColumns={['transaction_id', 'amount', 'is_fraud']}
+          onUpload={handleFileUpload}
+        />
+      </ModuleLayout>
+    )
+  }
+
+  // ─── Data View ────────────────────────────────────────────────────
   const pct = fraudPercentage ?? 0
 
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={pageTransition}
-      className="space-y-8"
-    >
+    <ModuleLayout>
       <PageHeader
         title="Fraud Lens"
         action={
@@ -83,51 +98,33 @@ export default function FraudLens() {
         </div>
       )}
 
-      <div className="grid gap-6 sm:grid-cols-3">
+      <StatsGrid columns={3}>
         <Card>
           <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Fraud count</h3>
-          {fraudCount != null ? (
-            <motion.p
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200 }}
-              className="text-3xl font-bold text-ds-text-primary"
-            >
-              {fraudCount}
-            </motion.p>
-          ) : (
-            <div className="flex h-14 items-center text-ds-text-muted">
-              {loading ? <LoadingSkeleton /> : <p className="text-sm">Upload CSV</p>}
-            </div>
-          )}
+          <motion.p
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200 }}
+            className="text-3xl font-bold text-ds-text-primary"
+          >
+            {fraudCount ?? 0}
+          </motion.p>
         </Card>
         <Card>
           <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Normal count</h3>
-          {normalCount != null ? (
-            <p className="text-3xl font-bold text-ds-text-primary">{normalCount}</p>
-          ) : (
-            <div className="flex h-14 items-center text-ds-text-muted">
-              <p className="text-sm">—</p>
-            </div>
-          )}
+          <p className="text-3xl font-bold text-ds-text-primary">{normalCount ?? 0}</p>
         </Card>
         <Card>
           <h3 className="mb-2 text-sm font-medium text-ds-text-muted">Risk level</h3>
-          {fraudPercentage != null ? (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${riskColor(pct)} ${riskBg(pct)}`}
-            >
-              {pct < 20 ? 'Low' : pct <= 50 ? 'Medium' : 'High'} ({pct}%)
-            </motion.span>
-          ) : (
-            <div className="flex h-14 items-center text-ds-text-muted">
-              {loading ? <LoadingSkeleton /> : <p className="text-sm">Upload CSV</p>}
-            </div>
-          )}
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${riskColor(pct)} ${riskBg(pct)}`}
+          >
+            {pct < 20 ? 'Low' : pct <= 50 ? 'Medium' : 'High'} ({pct}%)
+          </motion.span>
         </Card>
-      </div>
+      </StatsGrid>
 
       <Card>
         <h3 className="mb-4 text-sm font-medium text-ds-text-muted">Fraud vs normal</h3>
@@ -140,15 +137,7 @@ export default function FraudLens() {
           >
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label
-                >
+                <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
                   <Cell fill={COLORS.normal} />
                   <Cell fill={COLORS.fraud} />
                 </Pie>
@@ -157,11 +146,11 @@ export default function FraudLens() {
             </ResponsiveContainer>
           </motion.div>
         ) : (
-          <div className="flex h-64 items-center justify-center rounded-lg bg-ds-bg-base/50 text-ds-text-muted">
-            {loading ? <LoadingSkeleton /> : <p className="text-sm">Upload a CSV to see distribution</p>}
+          <div className="flex h-64 items-center justify-center rounded-lg bg-ds-bg-base/50 text-sm text-ds-text-muted">
+            No chart data
           </div>
         )}
       </Card>
-    </motion.div>
+    </ModuleLayout>
   )
 }
