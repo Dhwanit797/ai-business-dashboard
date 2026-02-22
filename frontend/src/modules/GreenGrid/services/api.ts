@@ -6,4 +6,5 @@ export const greenApi = {
     chart: () => api<{ hour: string; usage: number }[]>('/green-grid/chart'),
     upload: (file: File) =>
         uploadCsv<{ labels: string[]; values: number[]; average: number }>('/green-grid/upload-csv', file),
+    clear: () => api<{ message: string }>('/green-grid/clear', { method: 'DELETE' }),
 }

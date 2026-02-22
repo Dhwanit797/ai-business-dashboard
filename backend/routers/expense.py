@@ -24,3 +24,15 @@ def expense_trends(user=Depends(get_current_user), db: Session = Depends(get_db)
 @router.post("/upload-csv")
 def upload_csv(file: UploadFile = File(...), user=Depends(get_current_user), db: Session = Depends(get_db)):
     return upload_expense_csv(file, db)
+
+from models.expense import ExpenseItem
+
+@router.delete("/clear")
+def clear_expense_data(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        db.query(ExpenseItem).delete()
+        db.commit()
+        return {"message": "Data cleared successfully"}
+    except Exception as e:
+        db.rollback()
+        return {"message": f"Error clearing data: {str(e)}"}

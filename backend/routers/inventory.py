@@ -22,3 +22,15 @@ def inventory_summary(db: Session = Depends(get_db), user=Depends(get_current_us
 @router.get("/forecast")
 def inventory_forecast(user=Depends(get_current_user)):
     return get_inventory_forecast()
+
+from models.inventory import InventoryItem
+
+@router.delete("/clear")
+def clear_inventory_data(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        db.query(InventoryItem).delete()
+        db.commit()
+        return {"message": "Data cleared successfully"}
+    except Exception as e:
+        db.rollback()
+        return {"message": f"Error clearing data: {str(e)}"}

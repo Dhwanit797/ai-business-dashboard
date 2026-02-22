@@ -22,6 +22,7 @@ export default function GreenGrid() {
   const [chartData, setChartData] = useState<ChartPoint[] | null>(null)
   const [average, setAverage] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isClearing, setIsClearing] = useState(false)
   const { hasData, loading, refreshStatus } = useModuleStatus('green-grid')
 
   const loadData = () => {
@@ -55,6 +56,25 @@ export default function GreenGrid() {
       setAverage(null)
     }
   }
+
+  const handleClearAll = async () => {
+    if (!window.confirm("Are you sure you want to clear current data and start new analysis?")) return;
+
+    setIsClearing(true);
+    try {
+      await greenApi.clear();
+      setChartData(null);
+      setAverage(null);
+      setError(null);
+      await refreshStatus();
+      alert("Analysis reset successfully.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to reset analysis.");
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   // ─── Loading State ──────────────────────────────────────────────
   if (loading) {
@@ -97,6 +117,15 @@ export default function GreenGrid() {
           title="Green Grid Optimizer"
           action={
             <div className="flex items-center gap-3">
+              {hasData && (
+                <button
+                  onClick={handleClearAll}
+                  disabled={isClearing}
+                  className="inline-flex items-center justify-center rounded-lg border border-red-500/30 bg-transparent px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                >
+                  {isClearing ? 'Clearing...' : 'Start New Analysis'}
+                </button>
+              )}
               <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/15 px-3 py-1 text-xs font-semibold text-green-400 ring-1 ring-green-500/30">
                 <CheckCircle2 className="h-3.5 w-3.5" /> Insights Active
               </span>

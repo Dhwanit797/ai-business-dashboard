@@ -6,4 +6,5 @@ export const expenseApi = {
     trends: () => api<{ month: string; amount: number }[]>('/expense/trends'),
     upload: (file: File) =>
         uploadCsv<{ labels: string[]; values: number[]; total: number; trends?: { month: string; amount: number }[] }>('/expense/upload-csv', file),
+    clear: () => api<{ message: string }>('/expense/clear', { method: 'DELETE' }),
 }

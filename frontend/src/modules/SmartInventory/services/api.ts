@@ -6,4 +6,5 @@ export const inventoryApi = {
     forecast: () => api<{ week: string; predicted_stock: number }[]>('/inventory/forecast'),
     upload: (file: File) =>
         uploadCsv<{ success: boolean; records_added: number; errors: string[] }>('/inventory/upload-csv', file),
+    clear: () => api<{ message: string }>('/inventory/clear', { method: 'DELETE' }),
 }
