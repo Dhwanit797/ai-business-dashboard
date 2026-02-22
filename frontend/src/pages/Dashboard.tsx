@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import * as api from '../services/api'
+import { expenseApi } from '../modules/ExpenseSense/services/api'
 import { AnimatedCounter } from '../components/ui/AnimatedCounter'
 import LoadingSkeleton from '../components/LoadingSkeleton'
 import { staggerContainer, staggerItem } from '../animations/transitions'
@@ -27,14 +28,14 @@ export default function Dashboard() {
   const [health, setHealth] = useState<Awaited<ReturnType<typeof api.health.score>> | null>(null)
   const [recs, setRecs] = useState<Awaited<ReturnType<typeof api.recommendations.list>> | null>(null)
   const [carbon, setCarbon] = useState<Awaited<ReturnType<typeof api.carbon.estimate>> | null>(null)
-  const [expenseSummary, setExpenseSummary] = useState<Awaited<ReturnType<typeof api.expense.summary>> | null>(null)
+  const [expenseSummary, setExpenseSummary] = useState<Awaited<ReturnType<typeof expenseApi.summary>> | null>(null)
   const [reportLoading, setReportLoading] = useState(false)
 
   useEffect(() => {
     api.health.score().then(setHealth).catch(() => setHealth(null))
     api.recommendations.list().then(setRecs).catch(() => setRecs(null))
     api.carbon.estimate().then(setCarbon).catch(() => setCarbon(null))
-    api.expense.summary().then(setExpenseSummary).catch(() => setExpenseSummary(null))
+    expenseApi.summary().then(setExpenseSummary).catch(() => setExpenseSummary(null))
   }, [])
 
   async function handleDownloadReport() {
@@ -104,7 +105,7 @@ export default function Dashboard() {
                     transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
                   />
                 </svg>
-                <AnimatedCounter value={healthScore} className="mt-2 text-3xl font-bold" style={{ color: healthColor }} />
+                <AnimatedCounter value={healthScore} className={`mt-2 text-3xl font-bold`} />
                 <span className="text-ds-text-secondary">/ 100</span>
               </div>
               <div className="mt-6 flex flex-wrap gap-4 md:mt-0">
@@ -170,7 +171,7 @@ export default function Dashboard() {
                     paddingAngle={2}
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
-                    {expenseSummary.by_category.map((_, i) => (
+                    {expenseSummary.by_category.map((_entry, i) => (
                       <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                     ))}
                   </Pie>

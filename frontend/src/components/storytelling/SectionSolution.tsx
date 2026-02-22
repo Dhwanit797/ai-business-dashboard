@@ -37,7 +37,7 @@ export default function SectionSolution() {
         </motion.h2>
 
         <ScrollRevealStagger className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map(({ icon: Icon, title, desc }, i) => (
+          {features.map(({ icon: Icon, title, desc }, _i) => (
             <ScrollRevealItem key={title}>
               <motion.div
                 className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl"

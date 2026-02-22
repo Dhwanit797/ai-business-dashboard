@@ -6,13 +6,16 @@ from database import engine
 from database import Base
 from services.demo_data import init_db
 from models.inventory import InventoryItem
+from models.expense import ExpenseItem
+from models.fraud import FraudRecord
+from models.green_grid import GreenGridRecord
 from routers import auth, expense, fraud, inventory, green_grid, health, recommendations, carbon, report, chat
 
 app = FastAPI(title="Business AI API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

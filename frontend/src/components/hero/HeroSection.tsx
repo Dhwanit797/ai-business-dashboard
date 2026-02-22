@@ -160,7 +160,7 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.45 }}
         >
-          {['Analytics', 'Finance', 'Operations'].map((label, i) => (
+          {['Analytics', 'Finance', 'Operations'].map((label, _i) => (
             <span
               key={label}
               className="rounded-lg bg-ds-bg-surface/80 px-3 py-1.5 text-xs font-medium text-ds-text-secondary shadow-sm dark:bg-ds-bg-surface/60"

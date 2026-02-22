@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000'
+const API_BASE = 'http://localhost:8001'
 
 function getToken(): string | null {
   return localStorage.getItem('business_ai_token')
@@ -65,30 +65,10 @@ export async function login(email: string, password: string) {
 }
 
 // Modules
-export const expense = {
-  summary: () => api<{ by_category: { name: string; value: number }[]; total: number; trend: string; trend_percent: number }>('/expense/summary'),
-  trends: () => api<{ month: string; amount: number }[]>('/expense/trends'),
-  upload: (file: File) =>
-    uploadCsv<{ labels: string[]; values: number[]; total: number; trends?: { month: string; amount: number }[] }>('/api/expense/upload', file),
-}
-export const fraud = {
-  insights: () => api<{ anomalies_detected: number; total_transactions: number; risk_level: string; alerts: { id: number; type: string; score: number }[] }>('/fraud/insights'),
-  chart: () => api<{ day: string; normal: number; flagged: number }[]>('/fraud/chart'),
-  upload: (file: File) =>
-    uploadCsv<{ fraud_count: number; normal_count: number; fraud_percentage: number }>('/api/fraud/upload', file),
-}
-export const inventory = {
-  summary: () => api<{ items: { name: string; stock: number; reorder_at: number }[]; low_stock_count: number; suggestions: string[] }>('/inventory/summary'),
-  forecast: () => api<{ week: string; predicted_stock: number }[]>('/inventory/forecast'),
-  upload: (file: File) => 
-    uploadCsv<{ success: boolean; records_added: number; errors: string[] }>('/inventory/upload-csv', file),
-}
-export const greenGrid = {
-  data: () => api<{ current_usage_kwh: number; suggested_peak_shift: number; potential_savings_percent: number; recommendations: string[] }>('/green-grid/data'),
-  chart: () => api<{ hour: string; usage: number }[]>('/green-grid/chart'),
-  upload: (file: File) =>
-    uploadCsv<{ labels: string[]; values: number[]; average: number }>('/api/green/upload', file),
-}
+
+
+
+
 export const health = {
   score: () => api<{ score: number; level: string; color: string; factors: { name: string; score: number }[] }>('/health/score'),
 }

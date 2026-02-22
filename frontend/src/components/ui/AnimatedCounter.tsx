@@ -7,7 +7,7 @@ interface AnimatedCounterProps {
   className?: string
 }
 
-export function AnimatedCounter({ value, duration = 1, className = '' }: AnimatedCounterProps) {
+export function AnimatedCounter({ value, duration: _duration = 1, className = '' }: AnimatedCounterProps) {
   const [display, setDisplay] = useState(0)
   const spring = useSpring(0, { stiffness: 75, damping: 25 })
 

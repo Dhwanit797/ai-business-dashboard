@@ -9,7 +9,7 @@ import {
   Package,
   Leaf,
   ChevronLeft,
-  LogOut,
+
   Settings,
 } from 'lucide-react'
 
@@ -24,7 +24,7 @@ const nav = [
 ]
 
 export default function DashboardSidebar({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-  const { user, logout } = useAuth()
+  const { user, logout: _logout } = useAuth()
 
   return (
     <motion.aside
@@ -58,11 +58,10 @@ export default function DashboardSidebar({ open, onToggle }: { open: boolean; on
           <NavLink key={to} to={to} end={to === '/' || to === '/dashboard' || to === '/dashboard/settings'}>
             {({ isActive }) => (
               <motion.span
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                  isActive
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive
                     ? 'bg-ds-accent/15 text-ds-accent'
                     : 'text-ds-text-secondary hover:bg-ds-bg-surface hover:text-ds-text-primary'
-                }`}
+                  }`}
                 whileHover={{ x: open ? 2 : 0 }}
                 transition={{ duration: 0.2 }}
               >

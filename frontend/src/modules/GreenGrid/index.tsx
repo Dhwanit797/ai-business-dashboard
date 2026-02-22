@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
-import * as api from '../services/api'
-import Card from '../components/Card'
-import CsvUpload from '../components/CsvUpload'
-import LoadingSkeleton from '../components/LoadingSkeleton'
-import { pageVariants, pageTransition } from '../animations/pageVariants'
+import { greenApi } from './services/api'
+import Card from '../../components/Card'
+import CsvUpload from '../../components/CsvUpload'
+import PageHeader from '../../components/PageHeader'
+import LoadingSkeleton from '../../components/LoadingSkeleton'
+import { pageVariants, pageTransition } from '../../animations/pageVariants'
 
 type ChartPoint = { name: string; usage: number }
 
@@ -14,24 +15,24 @@ export default function GreenGrid() {
   const [average, setAverage] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [fileName, setFileName] = useState<string | null>(null)
 
   const handleFileUpload = async (file: File) => {
     setLoading(true)
     setError(null)
-    setFileName(file.name)
     try {
-      const data = await api.greenGrid.upload(file)
+      const data = await greenApi.upload(file)
       const points: ChartPoint[] = (data.labels || []).map((label, i) => ({
         name: label,
         usage: data.values?.[i] ?? 0,
       }))
       setChartData(points.length ? points : null)
       setAverage(data.average ?? null)
+      return data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
       setChartData(null)
       setAverage(null)
+      throw err
     } finally {
       setLoading(false)
     }
@@ -46,10 +47,17 @@ export default function GreenGrid() {
       transition={pageTransition}
       className="space-y-8"
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-ds-text-primary">Smart Green Grid Optimizer</h1>
-        <CsvUpload onUpload={handleFileUpload} loading={loading} fileName={fileName} disabled={loading} />
-      </div>
+      <PageHeader
+        title="Smart Green Grid Optimizer"
+        action={
+          <CsvUpload
+            onUpload={handleFileUpload}
+            title="Upload Grid Data"
+            description="Process CSV records"
+          />
+        }
+      />
+
       {error && (
         <div className="rounded-lg border border-ds-accent-danger/30 bg-ds-accent-danger/10 px-4 py-3 text-sm text-ds-accent-danger">
           {error}

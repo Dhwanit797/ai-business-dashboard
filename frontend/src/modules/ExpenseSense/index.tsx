@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
-import * as api from '../services/api'
-import Card from '../components/Card'
-import CsvUpload from '../components/CsvUpload'
-import LoadingSkeleton from '../components/LoadingSkeleton'
-import { pageVariants, pageTransition } from '../animations/pageVariants'
+import { expenseApi } from './services/api'
+import Card from '../../components/Card'
+import CsvUpload from '../../components/CsvUpload'
+import PageHeader from '../../components/PageHeader'
+import LoadingSkeleton from '../../components/LoadingSkeleton'
+import { pageVariants, pageTransition } from '../../animations/pageVariants'
 
 const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4']
 
@@ -19,14 +20,12 @@ export default function ExpenseSense() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [fileName, setFileName] = useState<string | null>(null)
 
   const handleFileUpload = async (file: File) => {
     setLoading(true)
     setError(null)
-    setFileName(file.name)
     try {
-      const data = await api.expense.upload(file)
+      const data = await expenseApi.upload(file)
       const byCategory: ChartItem[] = (data.labels || []).map((label, i) => ({
         name: label,
         value: data.values?.[i] ?? 0,
@@ -44,11 +43,13 @@ export default function ExpenseSense() {
       } else {
         setTrends(null)
       }
+      return data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
       setChartData(null)
       setTrends(null)
       setStats(null)
+      throw err
     } finally {
       setLoading(false)
     }
@@ -63,15 +64,17 @@ export default function ExpenseSense() {
       transition={pageTransition}
       className="space-y-8"
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-ds-text-primary">Expense Sense</h1>
-        <CsvUpload
-          onUpload={handleFileUpload}
-          loading={loading}
-          fileName={fileName}
-          disabled={loading}
-        />
-      </div>
+      <PageHeader
+        title="Expense Sense"
+        action={
+          <CsvUpload
+            onUpload={handleFileUpload}
+            title="Upload Expenses"
+            description="Process CSV records"
+          />
+        }
+      />
+
       {error && (
         <div className="rounded-lg bg-ds-accent-danger/10 border border-ds-accent-danger/30 px-4 py-3 text-sm text-ds-accent-danger">
           {error}

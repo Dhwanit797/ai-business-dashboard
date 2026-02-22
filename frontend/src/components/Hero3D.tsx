@@ -217,7 +217,7 @@ function OuterDataLines({
 
   return (
     <group>
-      <line ref={lineRef}>
+      <line ref={lineRef as any}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" count={curves.length / 3} array={curves} itemSize={3} />
         </bufferGeometry>
@@ -285,7 +285,7 @@ function NeuralCore({ isLight }: { isLight: boolean }) {
 
   return (
     <group>
-      <line ref={lineRef}>
+      <line ref={lineRef as any}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" count={linePositions.length / 3} array={linePositions} itemSize={3} />
         </bufferGeometry>
@@ -365,11 +365,11 @@ function DataPanel({ chartType, offset }: { chartType: 'line' | 'bar' | 'kpi'; o
   const barSegments: [number, number, number][][] =
     chartType === 'bar'
       ? [
-          [[0.1, 0, 0], [0.1, 0.4, 0]],
-          [[0.35, 0, 0], [0.35, 0.25, 0]],
-          [[0.6, 0, 0], [0.6, 0.35, 0]],
-          [[0.85, 0, 0], [0.85, 0.2, 0]],
-        ]
+        [[0.1, 0, 0], [0.1, 0.4, 0]],
+        [[0.35, 0, 0], [0.35, 0.25, 0]],
+        [[0.6, 0, 0], [0.6, 0.35, 0]],
+        [[0.85, 0, 0], [0.85, 0.2, 0]],
+      ]
       : []
 
   return (

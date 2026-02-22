@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import * as api from '../services/api'
-import Card from '../components/Card'
-import CsvUpload from '../components/CsvUpload'
-import LoadingSkeleton from '../components/LoadingSkeleton'
-import { pageVariants, pageTransition } from '../animations/pageVariants'
+import { fraudApi } from './services/api'
+import Card from '../../components/Card'
+import CsvUpload from '../../components/CsvUpload'
+import PageHeader from '../../components/PageHeader'
+import LoadingSkeleton from '../../components/LoadingSkeleton'
+import { pageVariants, pageTransition } from '../../animations/pageVariants'
 
 const COLORS = { normal: '#3b82f6', fraud: '#f59e0b' }
 
@@ -28,14 +29,12 @@ export default function FraudLens() {
   const [fraudPercentage, setFraudPercentage] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [fileName, setFileName] = useState<string | null>(null)
 
   const handleFileUpload = async (file: File) => {
     setLoading(true)
     setError(null)
-    setFileName(file.name)
     try {
-      const data = await api.fraud.upload(file)
+      const data = await fraudApi.upload(file)
       setFraudCount(data.fraud_count)
       setNormalCount(data.normal_count)
       setFraudPercentage(data.fraud_percentage)
@@ -43,12 +42,14 @@ export default function FraudLens() {
         { name: 'Normal', value: data.normal_count },
         { name: 'Fraud', value: data.fraud_count },
       ])
+      return data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
       setPieData(null)
       setFraudCount(null)
       setNormalCount(null)
       setFraudPercentage(null)
+      throw err
     } finally {
       setLoading(false)
     }
@@ -65,15 +66,17 @@ export default function FraudLens() {
       transition={pageTransition}
       className="space-y-8"
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-ds-text-primary">Fraud Lens</h1>
-        <CsvUpload
-          onUpload={handleFileUpload}
-          loading={loading}
-          fileName={fileName}
-          disabled={loading}
-        />
-      </div>
+      <PageHeader
+        title="Fraud Lens"
+        action={
+          <CsvUpload
+            onUpload={handleFileUpload}
+            title="Upload Transactions"
+            description="Scan CSV for fraud"
+          />
+        }
+      />
+
       {error && (
         <div className="rounded-lg border border-ds-accent-danger/30 bg-ds-accent-danger/10 px-4 py-3 text-sm text-ds-accent-danger">
           {error}

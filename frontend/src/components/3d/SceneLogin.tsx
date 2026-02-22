@@ -85,7 +85,7 @@ function LoginSceneContent() {
       <ambientLight intensity={0.45} />
       <directionalLight position={[3, 2, 5]} intensity={1} />
       <pointLight position={[-2, 1, 3]} intensity={0.4} color="#6366f1" />
-      <DataStreams />
+      <DataOrbs />
       <group ref={group}>
         <CityBlock position={[0, 0, 0]} scale={1.2} />
         <CityBlock position={[0.6, -0.1, -0.3]} scale={0.8} />
