@@ -95,7 +95,11 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 API: http://localhost:8000  
-Docs: http://localhost:8000/docs  
+Docs: http://localhost:8000/docs  (sometimes it will not work)
+
+# if you get any error run this command - 
+# python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
 
 ### 2. Frontend
 
