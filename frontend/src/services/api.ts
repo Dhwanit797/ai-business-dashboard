@@ -80,6 +80,8 @@ export const fraud = {
 export const inventory = {
   summary: () => api<{ items: { name: string; stock: number; reorder_at: number }[]; low_stock_count: number; suggestions: string[] }>('/inventory/summary'),
   forecast: () => api<{ week: string; predicted_stock: number }[]>('/inventory/forecast'),
+  upload: (file: File) => 
+    uploadCsv<{ success: boolean; records_added: number; errors: string[] }>('/inventory/upload-csv', file),
 }
 export const greenGrid = {
   data: () => api<{ current_usage_kwh: number; suggested_peak_shift: number; potential_savings_percent: number; recommendations: string[] }>('/green-grid/data'),

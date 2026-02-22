@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine
 from database import Base
 from services.demo_data import init_db
+from models.inventory import InventoryItem
 from routers import auth, expense, fraud, inventory, green_grid, health, recommendations, carbon, report, chat
 
 app = FastAPI(title="Business AI API", version="1.0.0")
